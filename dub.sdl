@@ -1,0 +1,35 @@
+name "nurt"
+description "Numem based D Runtime"
+authors "Luna"
+copyright "Copyright © 2025, Luna"
+license "BSL-1.0"
+
+targetPath "out/"
+
+dependency "numem" version=">=1.0.5"
+
+configuration "ldc" {
+    platforms "ldc"
+    
+    dflags "-defaultlib="
+    lflags "-nostdlib"
+}
+
+configuration "gdc" {
+    platforms "gdc"
+    
+    dflags "-nophoboslib"
+    lflags "-nostdlib"
+}
+
+configuration "dmd" {
+    platforms "dmd"
+    
+    dflags "-defaultlib="
+    lflags "-nostdlib"
+}
+
+// During unittests we basically don't want our runtime to take over.
+configuration "unittest" {
+    targetType "none"
+}
