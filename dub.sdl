@@ -7,12 +7,40 @@ license "BSL-1.0"
 targetPath "out/"
 
 dependency "numem" version=">=1.0.5"
-targetType "dynamicLibrary"
 
 lflags "-rpath=." platform="linux"
 
 configuration "ldc" {
     platforms "ldc"
+    
+    targetType "dynamicLibrary"
+    
+    dflags "-defaultlib="
+    lflags "-nostdlib"
+}
+
+configuration "ldc-static" {
+    platforms "ldc"
+    
+    targetType "staticLibrary"
+    
+    dflags "-defaultlib="
+    lflags "-nostdlib"
+}
+
+configuration "dmd" {
+    platforms "dmd"
+    
+    targetType "dynamicLibrary"
+    
+    dflags "-defaultlib="
+    lflags "-nostdlib"
+}
+
+configuration "dmd-static" {
+    platforms "dmd"
+    
+    targetType "staticLibrary"
     
     dflags "-defaultlib="
     lflags "-nostdlib"
@@ -21,14 +49,18 @@ configuration "ldc" {
 configuration "gdc" {
     platforms "gdc"
     
+    targetType "dynamicLibrary"
+    
     dflags "-nophoboslib"
     lflags "-nostdlib"
 }
 
-configuration "dmd" {
-    platforms "dmd"
+configuration "gdc-static" {
+    platforms "gdc"
     
-    dflags "-defaultlib="
+    targetType "staticLibrary"
+    
+    dflags "-nophoboslib"
     lflags "-nostdlib"
 }
 
