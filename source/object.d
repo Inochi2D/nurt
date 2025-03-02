@@ -1,6 +1,5 @@
 module object;
 import rt.cast_;
-import rt.invariant_;
 import rt.finalizer;
 import rt.lifetime;
 import rt.cmp;
@@ -34,6 +33,8 @@ version(GNU) {
 
 // Needed by runtime.
 public import core.internal.entrypoint : _d_cmain;
+public import rt.lifetime : _d_newitemT;
+public import rt.cmp : __equals, __cmp;
 
 
 

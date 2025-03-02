@@ -14,7 +14,6 @@
 */
 module core.internal.array;
 import numem.core.traits;
-import numem.core.lifetime : __copy_postblit;
 import numem.core.hooks;
 import rt.lifetime;
 

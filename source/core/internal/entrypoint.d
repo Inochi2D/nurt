@@ -15,20 +15,13 @@
 module core.internal.entrypoint;
 
 template _d_cmain() {
-    import numem.core.hooks;
-
-    private
-    size_t nu_strlen(inout(char)* str) @system @nogc pure nothrow {
-        const(char)* p = str;
-        while (*p)
-            ++p;
-        
-        return p - str;
-    }
 
     extern(C) {
-
+        size_t _nurt_strlen(inout(char)* str) @system @nogc pure nothrow;
+        
         int _d_run_main(int argc, char **argv, void* mainFunc) {
+            import numem.core.hooks : nu_malloc;
+
             // This is only meant to be used on SuperH with elf,
             // We can be pretty sure that the input string will be
             // at least ascii.
@@ -37,7 +30,7 @@ template _d_cmain() {
             size_t totalArgsLength = 0;
 
             foreach (i, ref arg; args) {
-                arg = argv[i][0 .. nu_strlen(argv[i])];
+                arg = argv[i][0 .. _nurt_strlen(argv[i])];
                 totalArgsLength += arg.length;
             }
 

@@ -29,6 +29,11 @@ void* _d_dynamic_cast(Object o, TypeInfo_Class c) {
     return res;
 }
 
+extern(C)
+void* _d_class_cast(Object o, TypeInfo_Class c) {
+    return _d_dynamic_cast(o, c);
+}
+
 /**
     Interface cast.
 */

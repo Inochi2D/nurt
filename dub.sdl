@@ -7,6 +7,9 @@ license "BSL-1.0"
 targetPath "out/"
 
 dependency "numem" version=">=1.0.5"
+targetType "dynamicLibrary"
+
+lflags "-rpath=." platform="linux"
 
 configuration "ldc" {
     platforms "ldc"
