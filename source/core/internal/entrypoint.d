@@ -59,7 +59,3 @@ template _d_cmain() {
         }
     }
 }
-
-// Because this is compiled without phobos
-// We need to invoke it outselves. 
-mixin _d_cmain;

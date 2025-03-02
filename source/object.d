@@ -32,6 +32,8 @@ version(GNU) {
     else version = WithArgTypes;
 }
 
+// Needed by runtime.
+public import core.internal.entrypoint : _d_cmain;
 
 
 
