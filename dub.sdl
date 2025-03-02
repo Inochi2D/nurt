@@ -16,7 +16,7 @@ configuration "ldc" {
     targetType "dynamicLibrary"
     
     dflags "-defaultlib="
-    lflags "-nostdlib"
+    lflags "-nostdlib" platform="posix"
 }
 
 configuration "ldc-static" {
@@ -25,7 +25,7 @@ configuration "ldc-static" {
     targetType "staticLibrary"
     
     dflags "-defaultlib="
-    lflags "-nostdlib"
+    lflags "-nostdlib" platform="posix"
 }
 
 configuration "dmd" {
@@ -34,7 +34,7 @@ configuration "dmd" {
     targetType "dynamicLibrary"
     
     dflags "-defaultlib="
-    lflags "-nostdlib"
+    lflags "-nostdlib" platform="posix"
 }
 
 configuration "dmd-static" {
@@ -43,7 +43,7 @@ configuration "dmd-static" {
     targetType "staticLibrary"
     
     dflags "-defaultlib="
-    lflags "-nostdlib"
+    lflags "-nostdlib" platform="posix"
 }
 
 configuration "gdc" {
@@ -52,7 +52,7 @@ configuration "gdc" {
     targetType "dynamicLibrary"
     
     dflags "-nophoboslib"
-    lflags "-nostdlib"
+    lflags "-nostdlib" platform="posix"
 }
 
 configuration "gdc-static" {
@@ -61,7 +61,7 @@ configuration "gdc-static" {
     targetType "staticLibrary"
     
     dflags "-nophoboslib"
-    lflags "-nostdlib"
+    lflags "-nostdlib" platform="posix"
 }
 
 // During unittests we basically don't want our runtime to take over.

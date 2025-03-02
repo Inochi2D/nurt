@@ -26,6 +26,7 @@ public import numem.core.hooks;
 //
 //          HELPERS
 //
+export
 extern(C)
 size_t _nurt_strlen(inout(char)* str) @system @nogc pure nothrow {
     const(char)* p = str;
@@ -35,6 +36,17 @@ size_t _nurt_strlen(inout(char)* str) @system @nogc pure nothrow {
     return p - str;
 }
 
+export
+extern(C)
+size_t _nurt_wstrlen(inout(wchar)* str) @system @nogc pure nothrow {
+    const(wchar)* p = str;
+    while (*p)
+        ++p;
+    
+    return p - str;
+}
+
+export
 const(char)[] nurt_fmt(Args...)(scope const(char)* format, Args args) {
     size_t n = snprintf(null, 0, format, args);
 
@@ -50,6 +62,15 @@ const(char)[] nurt_fmt(Args...)(scope const(char)* format, Args args) {
 //          C BINDINGS
 //
 
-private
-pragma(printf)
-extern(C) int snprintf(scope char* s, size_t n, scope const(char)* format, ...);
+version(CRuntime_Microsoft) {
+    
+    private
+    pragma(printf)
+    pragma(mangle, "_snprintf")
+    extern(C) int snprintf(scope char* s, size_t n, scope const(char)* format, ...);
+} else {
+
+    private
+    pragma(printf)
+    extern(C) int snprintf(scope char* s, size_t n, scope const(char)* format, ...);
+}

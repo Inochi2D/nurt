@@ -17,37 +17,28 @@ module core.internal.entrypoint;
 template _d_cmain() {
 
     extern(C) {
-        size_t _nurt_strlen(inout(char)* str) @system @nogc pure nothrow;
-        
-        int _d_run_main(int argc, char **argv, void* mainFunc) {
-            import numem.core.hooks : nu_malloc;
-
-            // This is only meant to be used on SuperH with elf,
-            // We can be pretty sure that the input string will be
-            // at least ascii.
-
-            char[][] args = (cast(char[]*)nu_malloc(argc * (char[]).sizeof))[0..argc];
-            size_t totalArgsLength = 0;
-
-            foreach (i, ref arg; args) {
-                arg = argv[i][0 .. _nurt_strlen(argv[i])];
-                totalArgsLength += arg.length;
-            }
-
-            // We will do no cleanup either, if things break then too bad.
-            // TODO: maybe add libunwind support?
-            return (cast(int function(char[][]))mainFunc)(args);
-        }
-
         int _Dmain(char[][] args);
-
-        // Handle WebAssembly if need be.
-        // NOTE: WebASM can't have start arguments.
         version(WebAssembly) {
-            extern(C) void _start() { _Dmain(null); }
+
+            // NOTE:    WebAssembly has a custom entrypoint called
+            //          _start, additionally webassembly can't have
+            //          launch arguments, so we just pass null.
+            void _start() { _Dmain(null); }
         } else {
+            
+            // NOTE:    All other platforms should call into _d_run_main,
+            //          if you're adding platform support and your platform
+            //          requires a custom entrypoint, add it to this file.
+            int _d_run_main(int argc, char **argv, void* mainFunc);
             int main(int argc, char **argv) {
                 return _d_run_main(argc, argv, &_Dmain);
+            }
+
+            // Solaris requires a function called _main as well.
+            version (Solaris) {
+                int _main(int argc, char** argv) {
+                    return main(argc, argv);
+                }
             }
         }
     }
