@@ -334,9 +334,7 @@ do {
 	/* Calculate: newsize = newlength * sizeelem
      */
 	bool overflow = false;
-	import core.checkedint : mulu;
-
-	const size_t newsize = mulu(sizeelem, newlength, overflow);
+	const size_t newsize = newlength * sizeelem;
 	if (overflow)
 		nu_fatal("Out of memory!");
 

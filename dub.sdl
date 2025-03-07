@@ -8,7 +8,7 @@ targetPath "out/"
 
 dependency "numem" version=">=1.0.5"
 
-lflags "-rpath=." platform="linux"
+// lflags "-rpath=." platform="linux"
 
 configuration "ldc" {
     platforms "ldc"

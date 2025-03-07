@@ -31,12 +31,21 @@ version(GNU) {
     else version = WithArgTypes;
 }
 
+version(WebAssembly) {
+    // This is here to ensure wasm libraries can be built.
+    @weak extern(C) void _start() { }
+}
+
 // Needed by runtime.
 public import core.internal.entrypoint : _d_cmain;
 public import rt.lifetime : _d_newitemT;
 public import rt.cmp : __equals, __cmp;
 
 
+// memcmp alternative implemented in utils.
+private
+extern(C)
+int _nurt_memcmp(scope const(void)* arg1, scope const(void)* arg2, size_t num) @nogc nothrow;
 
 //
 //          BASE TYPES
@@ -930,7 +939,6 @@ public:
 
     override
     bool equals(in void* p1, in void* p2) @trusted const {
-        import core.stdc.string : memcmp;
         if (!p1 || !p2)
             return false;
         else if (xopEquals)
@@ -938,7 +946,7 @@ public:
         else if (p1 == p2)
             return true;
         else // BUG: relies on the GC not moving objects
-            return memcmp(p1, p2, m_init.length) == 0;
+            return _nurt_memcmp(p1, p2, m_init.length) == 0;
     }
 
     override
