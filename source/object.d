@@ -51,7 +51,7 @@ int _nurt_memcmp(scope const(void)* arg1, scope const(void)* arg2, size_t num) @
 //          BASE TYPES
 //
 alias size_t = typeof(void.sizeof);
-alias ptrdiff_t = typeof(null - null);
+alias ptrdiff_t = typeof(cast(void*)0 - cast(void*)0);
 
 /**
     Bottom type.
@@ -213,6 +213,8 @@ private:
     uint refcount_;
 
 public:
+    alias TraceInfo = .TraceInfo;
+
     ~this() { }
 
     this(string msg, Throwable nextInChain = null) pure nothrow {
