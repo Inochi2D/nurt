@@ -18,7 +18,25 @@ template _d_cmain() {
 
     extern(C) {
         int _Dmain(char[][] args);
-        version(WebAssembly) {
+        version(WASI) {
+            import ldc.attributes : llvmAttr;
+
+            @llvmAttr("wasm-import-module", "wasi_snapshot_preview1")
+            @llvmAttr("wasm-import-name", "proc_exit")
+            extern noreturn __wasi_proc_exit(ubyte);
+
+            // NOTE:    WebAssembly has a custom entrypoint called
+            //          _start, additionally webassembly can't have
+            //          launch arguments, so we just pass null.
+            //          HOWEVER, WASI supports process exit codes via
+            //          proc_exit.
+            void _start() { 
+                int rval = _Dmain(null);
+
+                if (rval != 0)
+                    __wasi_proc_exit(cast(ubyte)rval % 127);
+            }
+        } else version(WebAssembly) {
 
             // NOTE:    WebAssembly has a custom entrypoint called
             //          _start, additionally webassembly can't have
