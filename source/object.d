@@ -14,8 +14,11 @@ import core.internal.array;
 //
 
 version(GNU) {
-    // Nothing needs to happen here, GDC just doesn't need to handle
-    // argtypes.
+    // GDC doesn't need to handle argtypes.
+    // HOWEVER, GDC requires specific symbols to be mangled.
+    // Some extra secondary symbols are defined here, but never used.
+
+    extern(C) __gshared void* __gdc_personality_v0;
 } else version (X86_64) {
 
     version (DigitalMars) version = WithArgTypes;
@@ -77,9 +80,6 @@ bool _xopCmp(const void*, const void*) @nogc nothrow {
 
 
 
-
-
-
 //
 //              OBJECT
 //
@@ -88,7 +88,6 @@ bool _xopCmp(const void*, const void*) @nogc nothrow {
     Base object type of all objects.
 */
 class Object {
-@nogc:
 public:
 
     /**
@@ -113,6 +112,7 @@ public:
             $(D 0) if they're the same, a positive value if $(D other) is
             logcally greater than this object.
     */
+    pragma(mangle, "_D6object6Object5opCmpMFCQqZi")
     int opCmp(Object other) nothrow const {
         auto selfAddr = cast(size_t) cast(void*) this;
         auto otherAddr = cast(size_t) cast(void*) other;
@@ -127,6 +127,7 @@ public:
             $(D true) if this object is the same as $(D other),
             $(D false) otherwise.
     */
+    pragma(mangle, "_D6object6Object8opEqualsMFCQtZb")
     bool opEquals(Object other) nothrow const {
         return this is other;
     }
@@ -207,24 +208,23 @@ interface TraceInfo {
     Base class of throwable.
 */
 class Throwable : Object {
-@nogc:
 private:
     Throwable nextInChain;
     uint refcount_;
 
 public:
     alias TraceInfo = .TraceInfo;
+    
+    @trusted nothrow ~this() { }
 
-    ~this() { }
-
-    this(string msg, Throwable nextInChain = null) pure nothrow {
+    this(string msg, Throwable nextInChain = null) @nogc @safe pure nothrow {
         this.msg = msg;
         this.nextInChain = nextInChain;
         if (nextInChain && nextInChain.refcount_)
             ++nextInChain.refcount_;
     }
 
-    this(string msg, string file, size_t line, Throwable nextInChain = null) pure nothrow {
+    this(string msg, string file, size_t line, Throwable nextInChain = null) @nogc @safe pure nothrow {
         this(msg, nextInChain);
         this.file = file;
         this.line = line;
@@ -256,12 +256,12 @@ public:
         The next throwable in the chain.
     */
     @safe
-    @property inout(Throwable) next() inout return scope pure nothrow {
+    @property inout(Throwable) next() inout return scope pure @nogc nothrow {
         return nextInChain;
     }
 
     @safe
-    @property void next(Throwable tail) scope pure nothrow { /// ditto.
+    @property void next(Throwable tail) scope pure @nogc nothrow { /// ditto.
         nextInChain = tail;
     }
 
@@ -272,7 +272,7 @@ public:
             Marked as $(D @system) to discourage casual use.
     */
     @system
-    final ref refcount() return pure nothrow {
+    final ref refcount() return pure @nogc nothrow {
         return refcount_;
     }
 
@@ -280,8 +280,15 @@ public:
         Gets the message of the exception.
     */
     @__future
-    const(char)[] message() @safe const nothrow {
+    const(char)[] message() @safe const @nogc nothrow {
         return this.msg;
+    }
+
+    // GNU is hardcoded to link to these extra symbols.
+    version(GNU) {
+        void toString(scope void delegate(in char[]) sink) const { }
+        override string toString() { return typeid(this).name; }
+        int opApply(scope int delegate(Throwable) dg) { return -1; }
     }
 }
 
@@ -289,21 +296,24 @@ public:
     An unrecoverable error
 */
 class Error : Throwable {
-@nogc nothrow: 
-    this(string msg) { super(msg); }
+nothrow: 
+    this(string msg) @nogc { super(msg); }
 }
 
 /**
     An exception
 */
 class Exception : Throwable {
-@nogc:
 public:
-    this(string msg, Throwable nextInChain = null) pure nothrow {
+    this(string msg, Throwable nextInChain = null) @nogc @safe pure nothrow {
         super(msg, nextInChain);
     }
 
-    this(string msg, string file, size_t line, Throwable nextInChain = null) pure nothrow {
+    this(string msg, string file, size_t line, Throwable nextInChain = null) @nogc @safe pure nothrow {
+        super(msg, file, line, nextInChain);
+    }
+
+    this(string msg, Throwable nextInChain, string file = __FILE__, size_t line = __LINE__) @nogc @safe pure nothrow {
         super(msg, file, line, nextInChain);
     }
 }
@@ -377,7 +387,7 @@ enum StructFlags : uint {
 }
 
 class TypeInfo {
-@nogc nothrow:
+nothrow:
 public:
 
     /**
@@ -430,7 +440,6 @@ public:
     Type information for classes.
 */
 class TypeInfo_Class : TypeInfo {
-@nogc:
 public:
 
     /**
@@ -549,7 +558,7 @@ public:
 alias ClassInfo = TypeInfo_Class;
 
 class TypeInfo_Interface : TypeInfo {
-@nogc nothrow:
+nothrow:
 public:
     TypeInfo_Class info;
 
@@ -590,7 +599,7 @@ class TypeInfo_AssociativeArray : TypeInfo { }
 
 
 class TypeInfo_Pointer : TypeInfo {
-@nogc nothrow:
+nothrow:
 public:
     TypeInfo m_next;
 
@@ -622,7 +631,7 @@ public:
 }
 
 class TypeInfo_Array : TypeInfo {
-@nogc nothrow:
+nothrow:
 public:
     TypeInfo value;
 
@@ -667,14 +676,14 @@ public:
 }
 
 class TypeInfo_Tuple : TypeInfo {
-@nogc nothrow:
+nothrow:
 public:
 
     TypeInfo[] elements;
 }
 
 class TypeInfo_StaticArray : TypeInfo {
-@nogc nothrow:
+nothrow:
 public:
     TypeInfo value;
     size_t len;
@@ -709,7 +718,7 @@ public:
 }
 
 class TypeInfo_Enum : TypeInfo {
-@nogc nothrow:
+nothrow:
 public:
     TypeInfo base;
     string name;
@@ -753,7 +762,7 @@ public:
 
 /// typeof(null)
 class TypeInfo_n : TypeInfo {
-@nogc nothrow:
+nothrow:
 public:
     override
     string toString() @safe const pure {
@@ -782,7 +791,7 @@ public:
 }
 
 class TypeInfo_Const : TypeInfo {
-@nogc nothrow:
+nothrow:
 public:
     TypeInfo base;
 
@@ -816,8 +825,8 @@ public:
         return base.equals(p1, p2);
     }
 }
-class TypeInfo_Invariant : TypeInfo {
-@nogc nothrow:
+class TypeInfo_Invariant : TypeInfo_Const {
+nothrow:
 public:
     TypeInfo base;
 
@@ -837,8 +846,8 @@ public:
     }
 }
 
-class TypeInfo_Shared : TypeInfo {
-@nogc nothrow:
+class TypeInfo_Shared : TypeInfo_Const {
+nothrow:
 public:
     TypeInfo base;
 
@@ -858,8 +867,8 @@ public:
     }
 }
 
-class TypeInfo_Inout : TypeInfo {
-@nogc nothrow:
+class TypeInfo_Inout : TypeInfo_Const {
+nothrow:
 public:
     TypeInfo base;
 
@@ -880,7 +889,7 @@ public:
 }
 
 class TypeInfo_Struct : TypeInfo {
-@nogc nothrow:
+nothrow:
 public:
     string name;
     void[] m_init;
@@ -980,7 +989,7 @@ public:
 
 // BASIC TYPES
 import numem.core.meta : AliasSeq;
-static foreach (type; AliasSeq!(bool, byte, char, dchar, double, float, int, long, short, ubyte, uint, ulong, ushort, void, wchar)) {
+static foreach (type; AliasSeq!(bool, byte, double, float, int, long, short, ubyte, uint, ulong, ushort, void, char, dchar, wchar)) {
     mixin(q{
 		class TypeInfo_}
             ~ type.mangleof ~ q{ : TypeInfo {
@@ -1014,6 +1023,29 @@ static foreach (type; AliasSeq!(bool, byte, char, dchar, double, float, int, lon
 			}
 		}
 		class TypeInfo_A}
+            ~ type.mangleof ~ q{ : TypeInfo_Array {
+            override string toString() const { return (type[]).stringof; }
+			override @property const(TypeInfo) next() @trusted const { return cast(inout)typeid(type); }
+            override size_t getHash(scope const void* p) @trusted const nothrow
+            {
+                return hashOf(*cast(const type[]*) p);
+            }
+
+			override bool equals(in void* av, in void* bv) @trusted const {
+				type[] a = *(cast(type[]*) av);
+				type[] b = *(cast(type[]*) bv);
+
+				static if(is(type == void))
+					return false;
+				else {
+					foreach(idx, item; a)
+						if(item != b[idx])
+							return false;
+					return true;
+				}
+			}
+		}
+        class TypeInfo_Ay} // Needed by GCC.
             ~ type.mangleof ~ q{ : TypeInfo_Array {
             override string toString() const { return (type[]).stringof; }
 			override @property const(TypeInfo) next() @trusted const { return cast(inout)typeid(type); }

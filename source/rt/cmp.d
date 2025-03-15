@@ -9,9 +9,11 @@
     Authors:   Luna Nielsen
 */
 module rt.cmp;
-@nogc nothrow:
+import numem.core.exception;
 
-bool __equals(T1, T2)(scope const T1[] lhs, scope const T2[] rhs) {
+nothrow:
+
+bool __equals(T1, T2)(scope const T1[] lhs, scope const T2[] rhs) @nogc {
     if (lhs.length != rhs.length) {
         return false;
     }
@@ -24,11 +26,12 @@ bool __equals(T1, T2)(scope const T1[] lhs, scope const T2[] rhs) {
 }
 
 extern(C)
-int _adEq2(void[] a1, void[] a2, TypeInfo ti) {
+int _adEq2(void[] a1, void[] a2, TypeInfo ti) @nogc {
 
     if (a1.length != a2.length)
         return 0; // not equal
-    if (!ti.equals(&a1, &a2))
+    
+    if (!assumeNoThrowNoGC((void[] a1, void[] a2, TypeInfo ti) { return ti.equals(&a1, &a2); }, a1, a2, ti))
         return 0;
     
     return 1;
@@ -113,7 +116,7 @@ int __cmp(T)(scope const T[] lhs, scope const T[] rhs) @trusted pure @nogc nothr
 // This function is called by the compiler when dealing with array
 // comparisons in the semantic analysis phase of CmpExp. The ordering
 // comparison is lowered to a call to this template.
-int __cmp(T1, T2)(T1[] s1, T2[] s2)
+int __cmp(T1, T2)(T1[] s1, T2[] s2) @nogc 
         if (!__traits(isScalar, T1) && !__traits(isScalar, T2)) {
     import core.internal.traits : Unqual;
 

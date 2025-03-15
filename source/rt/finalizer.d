@@ -37,7 +37,7 @@ void rt_finalize2(void* p, bool det = true, bool resetMemory = true) nothrow {
     }
 
     if (resetMemory) {
-        auto w = (*pc).initializer;
+        auto w = (*pc).m_init;
         p[0 .. w.length] = w[];
     }
 

@@ -19,7 +19,7 @@ module rt.lifetime;
 import core.attribute;
 import numem.core.hooks;
 
-@nogc nothrow:
+nothrow:
 
 private
 size_t structTypeInfoSize(const TypeInfo ti) pure {

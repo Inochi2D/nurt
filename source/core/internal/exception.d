@@ -117,7 +117,15 @@ extern(C) {
         nu_fatal(nurt_fmt("%s(%llu) %s: %s", o.file.ptr, o.line, o.classinfo.name.ptr, o.msg.ptr));
     }
 
-    version(Windows) {
+    version(GNU) {
+        extern(C) void _d_throw(Throwable o) {
+            _d_throw_exception(o);
+        }
+
+        extern(C) void __gdc_begin_catch(void* a) {
+            
+        }
+    } version(Windows) {
         extern(C) void _d_throwc(Throwable o) {
             _d_throw_exception(o);
         }
