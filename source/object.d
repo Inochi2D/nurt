@@ -8,6 +8,7 @@ import numem.lifetime;
 import numem.core.traits;
 import core.internal.hash;
 import core.internal.array;
+import core.internal.exception;
 
 //
 //          SETUP
@@ -1070,3 +1071,6 @@ static foreach (type; AliasSeq!(bool, byte, double, float, int, long, short, uby
 		}
 	});
 }
+
+// Backwards compat.
+alias __switch_error = __switch_errorT;
