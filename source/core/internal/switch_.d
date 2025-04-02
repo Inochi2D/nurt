@@ -2,9 +2,6 @@ module core.internal.switch_;
 import core.internal.exception;
 import rt.cmp;
 
-// Backwards compat.
-alias __switch_error = __switch_errorT;
-
 /**
 Support for switch statements switching on strings.
 Params:
