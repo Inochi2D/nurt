@@ -9,6 +9,7 @@ import numem.core.traits;
 import core.internal.hash;
 import core.internal.array;
 import core.internal.exception;
+public import core.internal.array: __ArrayCast;
 
 //
 //          SETUP
