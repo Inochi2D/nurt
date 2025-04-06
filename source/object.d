@@ -989,6 +989,29 @@ public:
     }
 }
 
+class TypeInfo_Function : TypeInfo {
+nothrow:
+public:
+
+    override
+    bool opEquals(Object o) const {
+        if (this is o)
+            return true;
+        auto s = cast(const TypeInfo_Function) o;
+        return s && this.deco == s.deco;
+    }
+
+    override const(void)[] initializer() nothrow pure const @safe {
+        return null;
+    }
+
+    TypeInfo next;
+
+    // Mangled function type string
+    string deco;
+}
+
+
 // BASIC TYPES
 import numem.core.meta : AliasSeq;
 static foreach (type; AliasSeq!(bool, byte, double, float, int, long, short, ubyte, uint, ulong, ushort, void, char, dchar, wchar)) {
