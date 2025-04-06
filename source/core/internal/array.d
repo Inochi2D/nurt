@@ -141,11 +141,11 @@ void reserve(T)(ref T[] arr, size_t length) @trusted {
 	arr = (cast(T*)(nu_malloc(length * T.sizeof).ptr))[0 .. 0];
 }
 
-T[] _d_newarrayU(T)(size_t length, bool isShared = false) pure @trusted {
-	return (cast(T*) nu_malloc(length * T.sizeof).ptr)[0 .. length];
+T[] _d_newarrayU(T)(size_t length, bool isShared = false) @trusted {
+	return (cast(T*) nu_malloc(length * T.sizeof))[0 .. length];
 }
 
-T[] _d_newarrayT(T)(size_t length, bool isShared = false) pure @trusted {
+T[] _d_newarrayT(T)(size_t length, bool isShared = false) @trusted {
 	auto arr = _d_newarrayU!T(length);
 	(cast(byte[]) arr)[] = 0;
 	return arr;
