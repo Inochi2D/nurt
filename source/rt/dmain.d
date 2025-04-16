@@ -30,7 +30,6 @@ int _d_run_main(int argc, char **argv, _d_main_t mainFunc) {
         return mainFunc(args);
 
     version(Windows) {
-        enum CP_UTF8 = 65001;
 
         // On Windows, args may NOT be UTF8, as such
         // we need to convert it in here.
@@ -74,21 +73,38 @@ int _d_run_main(int argc, char **argv, _d_main_t mainFunc) {
     return mainFunc(args);
 }
 
+version(Windows)
+export
+extern(C)
+int _d_wrun_main(int argc, wchar **argv, _d_main_t mainFunc) {
+    char[][] args = (cast(char[]*)nu_malloc(argc * (char[]).sizeof))[0..argc];
+    
+    foreach(i; 0..argc) {
+
+        const warg = argv[i];
+        const wlen = _nurt_wstrlen(warg) + 1;
+        const len = WideCharToMultiByte(CP_UTF8, 0, warg, cast(int)wlen, null, 0, null, null);
+        
+        args[i] = (cast(char*)nu_malloc(len))[0..len];
+        cast(void)WideCharToMultiByte(CP_UTF8, 0, warg, cast(int)wlen, args[i].ptr, cast(int)len, null, null);
+    }
+
+    return mainFunc(args);
+}
 
 //
-//          C BINDINGS
+//          IMPLEMENTATION DETAILS
 //
 
 version(Windows) {
 extern(Windows):
+    enum CP_UTF8 = 65_001;
+
     extern wchar* GetCommandLineW();
     extern wchar** CommandLineToArgvW(const(wchar)* arg, int* argc);
     extern void LocalFree(void* ptr) @system @nogc nothrow;
     extern int WideCharToMultiByte(uint, uint, const(wchar)*, int, char*, int, char*, bool*);
-    
-    extern(C) size_t _nurt_wstrlen(inout(wchar)* str);
-} else {
-    
-    extern(C) 
-    size_t _nurt_strlen(inout(char)* str) @system @nogc pure nothrow;
 }
+
+extern(C) size_t _nurt_strlen(inout(char)* str) @system @nogc pure nothrow;
+extern(C) size_t _nurt_wstrlen(inout(wchar)* str);
