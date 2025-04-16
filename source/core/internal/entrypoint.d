@@ -18,6 +18,7 @@ template _d_cmain() {
 
     extern(C) {
         int _Dmain(char[][] args);
+        
         version(WASI) {
             import ldc.attributes : llvmAttr;
 
@@ -47,8 +48,8 @@ template _d_cmain() {
             // NOTE:    All other platforms should call into _d_run_main,
             //          if you're adding platform support and your platform
             //          requires a custom entrypoint, add it to this file.
-            int _d_run_main(int argc, char **argv, void* mainFunc);
-            int main(int argc, char **argv) {
+            int _d_run_main(int argc, char** argv, void* mainFunc);
+            int main(int argc, char** argv) {
                 return _d_run_main(argc, argv, &_Dmain);
             }
 

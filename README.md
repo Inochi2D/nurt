@@ -12,6 +12,4 @@ as the dub package prevents it from linking in. Any usage of druntime which gene
 code however, is not supported.
 
 ## Known issues
- * Win32 (i386/x86) is known to crash on application exit, root cause unknown as of current.
  * Exceptions have not been implemented yet, application will immediately crash on exception or assert.
- * Some C runtime linker flags may cause `_D_main` being called multiple times.
