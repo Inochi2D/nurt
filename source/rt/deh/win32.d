@@ -8,10 +8,6 @@ void _d_throwc(Throwable o) {
     _d_throw_exception(o);
 }
 
-void* _d_eh_enter_catch(void*, void*) {
-    return null;
-}
-
 // LDC adds extra error handling symbols we need to include.
 version(LDC) {
     export
