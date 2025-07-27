@@ -6,8 +6,9 @@ import rt.cmp;
 import core.attribute;
 import numem.lifetime;
 import numem.core.traits;
+import numem.core.exception;
 import core.internal.hash;
-import core.internal.exception;
+import core.exception;
 
 //
 //          SETUP
@@ -121,8 +122,7 @@ public:
             $(D 0) if they're the same, a positive value if $(D other) is
             logcally greater than this object.
     */
-    pragma(mangle, "_D6object6Object5opCmpMFCQqZi")
-    int opCmp(Object other) nothrow const {
+    int opCmp(Object other) {
         auto selfAddr = cast(size_t) cast(void*) this;
         auto otherAddr = cast(size_t) cast(void*) other;
 
@@ -136,8 +136,7 @@ public:
             $(D true) if this object is the same as $(D other),
             $(D false) otherwise.
     */
-    pragma(mangle, "_D6object6Object8opEqualsMFCQtZb")
-    bool opEquals(Object other) nothrow const {
+    bool opEquals(Object other) {
         return this is other;
     }
 
@@ -293,20 +292,19 @@ public:
         return this.msg;
     }
 
-    // GNU is hardcoded to link to these extra symbols.
-    version(GNU) {
-        void toString(scope void delegate(in char[]) sink) const { }
-        override string toString() { return typeid(this).name; }
-        int opApply(scope int delegate(Throwable) dg) { return -1; }
-    }
+    // These are almost always linked in.
+    void toString(scope void delegate(in char[]) sink) const { }
+    int opApply(scope int delegate(Throwable) dg) { return -1; }
+    override string toString() { return typeid(this).name; }
 }
 
 /**
     An unrecoverable error
 */
 class Error : Throwable {
-nothrow: 
+@nogc nothrow pure @safe: 
     this(string msg) @nogc { super(msg); }
+    this(string msg, string file = __FILE__, size_t line = __LINE__, Throwable next = null) @nogc { super(msg, file, line, next); }
 }
 
 /**
@@ -555,8 +553,7 @@ public:
     bool equals(in void* p1, in void* p2) @trusted nothrow const {
         Object o1 = *cast(Object*) p1;
         Object o2 = *cast(Object*) p2;
-
-        return (o1 is o2) || (o1 && o1.opEquals(o2));
+        return assumeNoThrowNoGC((Object o1, Object o2) => (o1 is o2) || (o1 && o1.opEquals(o2)), o1, o2);
     }
 
     override
@@ -573,12 +570,12 @@ public:
 
     override
     bool equals(in void* p1, in void* p2) @trusted const {
+
         Interface* pi = **cast(Interface***)*cast(void**) p1;
         Object o1 = cast(Object)(*cast(void**) p1 - pi.offset);
         pi = **cast(Interface***)*cast(void**) p2;
         Object o2 = cast(Object)(*cast(void**) p2 - pi.offset);
-
-        return o1 == o2 || (o1 && o1.opCmp(o2) == 0);
+        return assumeNoThrowNoGC((Object o1, Object o2) => o1 == o2 || (o1 && o1.opCmp(o2) == 0), o1, o2);
     }
 
     override
