@@ -7,9 +7,7 @@ import core.attribute;
 import numem.lifetime;
 import numem.core.traits;
 import core.internal.hash;
-import core.internal.array;
 import core.internal.exception;
-public import core.internal.array: __ArrayCast;
 
 //
 //          SETUP
@@ -43,9 +41,17 @@ version(WebAssembly) {
 
 // Needed by runtime.
 public import core.internal.entrypoint : _d_cmain;
+public import core.internal.switch_ : __switch;
 public import rt.lifetime : _d_newitemT;
 public import rt.cmp : __equals, __cmp;
+public import core.internal.array.nurt;
 
+
+// 
+//          ARRAY HELPERS
+// 
+@property T[] dup(T)(T[] a) => _dup!(T, T)(a);
+@property immutable(T)[] idup(T)(T[] a) => _dup!(T, immutable(T))(a);
 
 // memcmp alternative implemented in utils.
 private
@@ -85,6 +91,7 @@ bool _xopCmp(const void*, const void*) @nogc nothrow {
 //
 //              OBJECT
 //
+alias destroy = nogc_delete;
 
 /**
     Base object type of all objects.
@@ -597,7 +604,19 @@ public:
 }
 
 /// NOT SUPPORTED.
-class TypeInfo_AssociativeArray : TypeInfo { }
+class TypeInfo_AssociativeArray : TypeInfo {
+
+    // TypeInfo entry is generated from the type of this template to help rt/aaA.d
+    static
+    struct Entry(K, V) {
+        K key;
+        V value;
+    }
+
+    TypeInfo value;
+    TypeInfo key;
+    TypeInfo entry;
+}
 
 
 class TypeInfo_Pointer : TypeInfo {
@@ -851,7 +870,6 @@ public:
 class TypeInfo_Shared : TypeInfo_Const {
 nothrow:
 public:
-    TypeInfo base;
 
     override
     size_t getHash(scope const(void*) p) @trusted const nothrow {

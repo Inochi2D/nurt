@@ -2,18 +2,25 @@
 docs.json
 __dummy.html
 docs/
-/nurt
-nurt.so
-nurt.dylib
-nurt.dll
-nurt.a
-nurt.lib
-nurt-test-*
+/nulib
+nu*.dll
+nu*.lib
+libnu*.so
+libnu*.dylib
+libnu*.a
+nu*-test-*
 *.exe
 *.pdb
 *.o
 *.obj
 *.lst
 
-out/
 dub.selections.json
+__dummy_docs/
+out/
+
+# Windows metadata
+*.winmd
+
+# VSCode Junk
+.vscode/

@@ -6,54 +6,19 @@ license "BSL-1.0"
 
 targetPath "out/"
 
-dependency "numem" version=">=1.0.5"
+dependency "numem" version=">=1.3.0"
 
-configuration "ldc" {
-    platforms "ldc"
-    
-    targetType "dynamicLibrary"
-    
-    dflags "-defaultlib="
-}
-
-configuration "ldc-static" {
-    platforms "ldc"
-    
+configuration "nurt-enabled" {
     targetType "staticLibrary"
-    
-    dflags "-defaultlib="
+
+    dflags "-defaultlib=" platform="ldc"
+    dflags "-defaultlib=" platform="dmd"
+    dflags "-nophoboslib" platform="gdc"
+    versions "USE_NURT"
 }
 
-configuration "dmd" {
-    platforms "dmd"
-    
-    targetType "dynamicLibrary"
-    
-    dflags "-defaultlib="
-}
-
-configuration "dmd-static" {
-    platforms "dmd"
-    
-    targetType "staticLibrary"
-    
-    dflags "-defaultlib="
-}
-
-configuration "gdc" {
-    platforms "gdc"
-    
-    targetType "dynamicLibrary"
-    
-    dflags "-nophoboslib"
-}
-
-configuration "gdc-static" {
-    platforms "gdc"
-    
-    targetType "staticLibrary"
-    
-    dflags "-nophoboslib"
+configuration "nurt-disabled" {
+    targetType "none"
 }
 
 // During unittests we basically don't want our runtime to take over.

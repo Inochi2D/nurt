@@ -64,7 +64,7 @@ int __cmp(T)(scope const T[] lhs, scope const T[] rhs) @trusted pure @nogc nothr
                         return s1[u] > s2[u] ? 1 : -1;
                 }
             } else {
-                const ret = memcmp(s1.ptr, s2.ptr, len);
+                const ret = memcmp(cast(void*)s1.ptr, cast(void*)s2.ptr, len);
                 if (ret)
                     return ret;
             }
@@ -79,7 +79,6 @@ int __cmp(T)(scope const T[] lhs, scope const T[] rhs) @trusted pure @nogc nothr
         version (BigEndian)
             static if (__traits(isUnsigned, T) ? !is(T == __vector) :  is(T : P*, P)) {
                 if (!__ctfe) {
-                    import core.stdc.string : memcmp;
 
                     int c = memcmp(lhs.ptr, rhs.ptr, (lhs.length <= rhs.length ? lhs.length
                             : rhs.length) * T.sizeof);
@@ -118,7 +117,7 @@ int __cmp(T)(scope const T[] lhs, scope const T[] rhs) @trusted pure @nogc nothr
 // comparison is lowered to a call to this template.
 int __cmp(T1, T2)(T1[] s1, T2[] s2) @nogc 
         if (!__traits(isScalar, T1) && !__traits(isScalar, T2)) {
-    import core.internal.traits : Unqual;
+    import numem.core.traits : Unqual;
 
     alias U1 = Unqual!T1;
     alias U2 = Unqual!T2;
@@ -151,7 +150,6 @@ int __cmp(T1, T2)(T1[] s1, T2[] s2) @nogc
             // TODO: fix this legacy bad behavior, see
             // https://issues.dlang.org/show_bug.cgi?id=17244
             static assert(is(U1 == U2), "Internal error.");
-            import core.stdc.string : memcmp;
 
             auto c = (() @trusted => memcmp(&at(s1, u), &at(s2, u), U1.sizeof))();
             if (c != 0)
@@ -160,3 +158,8 @@ int __cmp(T1, T2)(T1[] s1, T2[] s2) @nogc
     }
     return (s1.length > s2.length) - (s1.length < s2.length);
 }
+
+private:
+
+extern(C)
+extern int memcmp(return scope void*, return scope void*, size_t) @nogc nothrow @system pure;

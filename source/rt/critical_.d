@@ -1,0 +1,2 @@
+module rt.critical_;
+

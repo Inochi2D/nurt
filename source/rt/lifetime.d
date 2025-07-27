@@ -19,10 +19,11 @@ module rt.lifetime;
 import core.attribute;
 import numem.core.hooks;
 
+import numem.core.memory;
 nothrow:
 
 private
-size_t structTypeInfoSize(const TypeInfo ti) pure {
+size_t structTypeInfoSize(const TypeInfo ti) @trusted pure {
     if (ti && typeid(ti) is typeid(TypeInfo_Struct)) {
         auto sti = cast(TypeInfo_Struct) cast(void*) ti;
         if (sti.xdtor)
@@ -62,7 +63,7 @@ Object _d_newclass(const(ClassInfo) ci) @weak {
 }
 
 extern (C)
-void* _d_newitemU(scope const TypeInfo _ti) {
+void* _d_newitemU(scope const TypeInfo _ti) @trusted pure {
     auto ti = cast() _ti;
     immutable tiSize = structTypeInfoSize(ti);
     immutable itemSize = ti.size;
@@ -74,19 +75,27 @@ void* _d_newitemU(scope const TypeInfo _ti) {
 
 static if(__VERSION__ < 2105) {
     extern(C)
-    void* _d_newitemT(in TypeInfo _ti) {
+    void* _d_newitemT(in TypeInfo _ti) @trusted pure {
         auto p = _d_newitemU(_ti);
         nu_memset(p, 0, _ti.size);
         return cast(void*) p;
     }
 } else {
-    T* _d_newitemT(T)() @trusted {
+    T* _d_newitemT(T)() @trusted pure {
         TypeInfo _ti = typeid(T);
         auto p = _d_newitemU(_ti);
         nu_memset(p, 0, _ti.size);
         return cast(T*) p;
     }
 }
+
+version (LDC) 
+extern(C)
+void _d_array_slice_copy(void* dst, size_t dstlen, void* src, size_t srclen, size_t elemsz) @trusted nothrow {
+    import ldc.intrinsics : llvm_memcpy;
+    llvm_memcpy!size_t(dst, src, dstlen * elemsz, 0);
+}
+
 
 bool __has_postblit(in TypeInfo ti) nothrow pure {
     return (&ti.postblit).funcptr !is &TypeInfo.postblit;

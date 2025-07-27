@@ -18,7 +18,7 @@ import core.internal.utils;
 @nogc nothrow:
 
 private alias dummy__switch_errorT = __switch_errorT!();
-void __switch_errorT()(string file, size_t line) @trusted @nogc {
+void __switch_errorT()(string file, size_t line) @trusted @nogc pure {
     _d_assert_msg("No appropriate switch clause found!\0", file, cast(uint) line);
 }
 
@@ -50,7 +50,7 @@ extern(C) {
         nu_fatal(nurt_fmt("Assertation Failure: %s(%llu)", file.ptr, line));
     }
 
-    void _d_assert_msg(string msg, string file, uint line) @trusted @nogc {
+    void _d_assert_msg(string msg, string file, uint line) @trusted @nogc pure {
         nu_fatal(nurt_fmt("Assertation Failure: %s(%llu) %s", file.ptr, line, msg.ptr));
     }
 
@@ -115,23 +115,5 @@ extern(C) {
     //
     extern (C) void _d_throw_exception(Throwable o) {
         nu_fatal(nurt_fmt("%s(%llu) %s: %s", o.file.ptr, o.line, o.classinfo.name.ptr, o.msg.ptr));
-    }
-
-    version(GNU) {
-        extern(C) void _d_throw(Throwable o) {
-            _d_throw_exception(o);
-        }
-
-        extern(C) void __gdc_begin_catch(void* a) {
-            
-        }
-    } version(Windows) {
-        extern(C) void _d_throwc(Throwable o) {
-            _d_throw_exception(o);
-        }
-    } else {
-        extern(C) void _d_throwdwarf(Throwable o) {
-            _d_throw_exception(o);
-        }
     }
 }

@@ -15,9 +15,8 @@
 module rt.invariant_;
 
 /* */
-pragma(mangle, "_D9invariant12_d_invariantFC6ObjectZv")
-export
-void _d_invariant(Object o) {
+pragma(mangle, "_D2rt10invariant_12_d_invariantFC6ObjectZv")
+export void _d_invariant(Object o) {
     ClassInfo c;
 
     //printf("__d_invariant(%p)\n", o);

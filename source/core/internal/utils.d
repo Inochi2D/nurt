@@ -62,7 +62,7 @@ int _nurt_memcmp(scope const(void)* arg1, scope const(void)* arg2, size_t num) {
 }
 
 export
-const(char)[] nurt_fmt(Args...)(scope const(char)* format, Args args) {
+const(char)[] nurt_fmt(Args...)(scope const(char)* format, Args args) pure {
     version(WebAssembly) {
         
         // TODO: Implement?
@@ -88,10 +88,10 @@ version(CRuntime_Microsoft) {
     private
     pragma(printf)
     pragma(mangle, "_snprintf")
-    extern(C) int snprintf(scope char* s, size_t n, scope const(char)* format, ...);
+    extern(C) int snprintf(scope char* s, size_t n, scope const(char)* format, ...) pure;
 } else {
 
     private
     pragma(printf)
-    extern(C) int snprintf(scope char* s, size_t n, scope const(char)* format, ...);
+    extern(C) int snprintf(scope char* s, size_t n, scope const(char)* format, ...) pure;
 }
