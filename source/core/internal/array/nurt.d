@@ -671,7 +671,6 @@ alias toVecType(S) = vec!S;
 alias toVecType(alias op) = op;
 
 string toString(size_t num) {
-    import core.internal.string : unsignedToTempString;
 
     // Workaround for https://issues.dlang.org/show_bug.cgi?id=19268
     if (__ctfe) {
@@ -686,6 +685,71 @@ string toString(size_t num) {
         // not be used by the unwary.
         assert(0, __FUNCTION__ ~ " not available in -betterC except during CTFE.");
     }
+}
+
+/**
+    Converts an unsigned integer value to a string of characters.
+
+    Can be used when compiling with -betterC. Does not allocate memory.
+
+    Params:
+        T = char, wchar or dchar
+        value = the unsigned integer value to convert
+        buf   = the pre-allocated buffer used to store the result
+        radix = the numeric base to use in the conversion 2 through 36 (defaults to 10)
+        upperCase = use upper case letters for radices 11 - 36
+
+    Returns:
+        The unsigned integer value as a string of characters
+*/
+T[] unsignedToTempString(uint radix = 10, bool upperCase = false, T)(ulong value, return scope T[] buf)
+if (radix >= 2 && radix <= 36 &&
+    (is(T == char) || is(T == wchar) || is(T == dchar)))
+{
+    enum baseChar = upperCase ? 'A' : 'a';
+    size_t i = buf.length;
+
+    static if (size_t.sizeof == 4) // 32 bit CPU
+    {
+        if (value <= uint.max)
+        {
+            // use faster 32 bit arithmetic
+            uint val = cast(uint) value;
+            do
+            {
+                uint x = void;
+                if (val < radix)
+                {
+                    x = cast(uint)val;
+                    val = 0;
+                }
+                else
+                {
+                    x = cast(uint)(val % radix);
+                    val /= radix;
+                }
+                buf[--i] = cast(char)((radix <= 10 || x < 10) ? x + '0' : x - 10 + baseChar);
+            } while (val);
+            return buf[i .. $];
+        }
+    }
+
+    do
+    {
+        uint x = void;
+        if (value < radix)
+        {
+            x = cast(uint)value;
+            value = 0;
+        }
+        else
+        {
+            x = cast(uint)(value % radix);
+            value /= radix;
+        }
+        buf[--i] = cast(char)((radix <= 10 || x < 10) ? x + '0' : x - 10 + baseChar);
+    } while (value);
+    return buf[i .. $];
 }
 
 bool contains(T)(const scope T[] ary, const scope T[] vals...) {

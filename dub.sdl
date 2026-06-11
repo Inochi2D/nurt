@@ -7,7 +7,7 @@ license "BSL-1.0"
 targetPath "out/"
 
 toolchainRequirements ldc=">=1.40.0" frontend=">=2.106"
-dependency "numem" version=">=1.3.1"
+dependency "numem" version=">=1.6.5"
 
 configuration "nurt-enabled" {
     targetType "staticLibrary"
@@ -15,6 +15,9 @@ configuration "nurt-enabled" {
     dflags "-defaultlib=" platform="ldc"
     dflags "-defaultlib=" platform="dmd"
     dflags "-nophoboslib" platform="gdc"
+
+    // Automatically set up nurt for use on LDC
+    dflags "--conf=$PACKAGE_DIR/nurt.conf" platform="ldc"
     versions "USE_NURT"
 }
 

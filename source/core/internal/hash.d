@@ -27,7 +27,8 @@ private enum floatCoalesceNaNs = true;
 
 // If either of the above are true then no struct or array that contains the
 // representation of a floating point number may be hashed with `bytesHash`.
-@nogc nothrow pure @safe unittest {
+@nogc nothrow pure @safe unittest
+{
     static if (floatCoalesceZeroes)
         assert(hashOf(+0.0) == hashOf(-0.0)); // Same hash for +0.0 and -0.0.
     static if (floatCoalesceNaNs)
@@ -35,24 +36,44 @@ private enum floatCoalesceNaNs = true;
 }
 
 private enum hasCallableToHash(T) = __traits(compiles, {
-    size_t hash = ((T* x) => (*x).toHash())(null);
-});
+        size_t hash = ((T* x) => (*x).toHash())(null);
+    });
 
-@nogc nothrow pure @safe unittest {
-    static struct S { size_t toHash() { return 4; } }
+@nogc nothrow pure @safe unittest
+{
+    static struct S
+    {
+        size_t toHash()
+        {
+            return 4;
+        }
+    }
+
     assert(hasCallableToHash!S);
     assert(!hasCallableToHash!(shared const S));
 }
 
-private enum isFinalClassWithAddressBasedHash(T) = __traits(isFinalClass, T)
-    // Use __traits(compiles, ...) in case there are multiple overloads of `toHash`.
-    && __traits(compiles, {static assert(&Object.toHash is &T.toHash);});
+private enum isFinalClassWithAddressBasedHash(T) = __traits(isFinalClass, T) // Use __traits(compiles, ...) in case there are multiple overloads of `toHash`.
+    && __traits(compiles, { static assert(&Object.toHash is &T.toHash); });
 
 @nogc nothrow pure @safe unittest
 {
-    static class C1 {}
-    final static class C2 : C1 {}
-    final static class C3 : C1 { override size_t toHash() const nothrow { return 1; }}
+    static class C1
+    {
+    }
+
+    final static class C2 : C1
+    {
+    }
+
+    final static class C3 : C1
+    {
+        override size_t toHash() const nothrow
+        {
+            return 1;
+        }
+    }
+
     static assert(!isFinalClassWithAddressBasedHash!Object);
     static assert(!isFinalClassWithAddressBasedHash!C1);
     static assert(isFinalClassWithAddressBasedHash!C2);
@@ -65,7 +86,7 @@ private template isCppClassWithoutHash(T)
         enum isCppClassWithoutHash = false;
     else
         enum bool isCppClassWithoutHash = __traits(getLinkage, T) == "C++"
-            && !is(immutable T* : immutable Object*) && !hasCallableToHash!T;
+            && !is(immutable T*  : immutable Object*) && !hasCallableToHash!T;
 }
 
 /+
@@ -104,6 +125,7 @@ private template canBitwiseHash(T)
         else
         {
             import core.internal.traits : allSatisfy;
+
             enum canBitwiseHash = allSatisfy!(.canBitwiseHash, typeof(T.tupleof));
         }
     }
@@ -126,24 +148,26 @@ private template canBitwiseHash(T)
     else
     {
         static assert(is(T == delegate) || is(T : void) || is(T : typeof(null)),
-            "Internal error: unanticipated type "~T.stringof);
+            "Internal error: unanticipated type " ~ T.stringof);
         enum canBitwiseHash = true;
     }
 }
 
 //enum hash. CTFE depends on base type
 size_t hashOf(T)(auto ref T val, size_t seed = 0)
-if (is(T == enum) && !__traits(isScalar, T))
+        if (is(T == enum) && !__traits(isScalar, T))
 {
-    static if (is(T EType == enum)) {} //for EType
+    static if (is(T EType == enum))
+    {
+    } //for EType
     return hashOf(cast(EType) val, seed);
 }
 
 //CTFE ready (depends on base type).
-size_t hashOf(T)(scope const auto ref T val, size_t seed = 0)
-if (!is(T == enum) && __traits(isStaticArray, T) && canBitwiseHash!T)
+size_t hashOf(T)(scope const auto ref T val, size_t seed = 0) @trusted
+        if (!is(T == enum) && __traits(isStaticArray, T) && canBitwiseHash!T)
 {
-    import core.internal.convert : toUbyte;
+
     // FIXME:
     // We would like to to do this:
     //
@@ -161,20 +185,16 @@ if (!is(T == enum) && __traits(isStaticArray, T) && canBitwiseHash!T)
     {
         return bytesHashAlignedBy!size_t((ubyte[]).init, seed);
     }
-    static if (is(typeof(toUbyte(val)) == const(ubyte)[]))
-    {
-        return bytesHashAlignedBy!T(toUbyte(val), seed);
-    }
     else //Other types. CTFE unsupported
     {
-        assert(!__ctfe, "unable to compute hash of "~T.stringof~" at compile time");
-        return bytesHashAlignedBy!T((cast(const(ubyte)*) &val)[0 .. T.sizeof], seed);
+        assert(!__ctfe, "unable to compute hash of " ~ T.stringof ~ " at compile time");
+        return bytesHashAlignedBy!T((cast(const(ubyte)*)&val)[0 .. T.sizeof], seed);
     }
 }
 
 //CTFE ready (depends on base type).
-size_t hashOf(T)(auto ref T val, size_t seed = 0)
-if (!is(T == enum) && __traits(isStaticArray, T) && !canBitwiseHash!T)
+size_t hashOf(T)(auto ref T val, size_t seed = 0) @trusted
+        if (!is(T == enum) && __traits(isStaticArray, T) && !canBitwiseHash!T)
 {
     // FIXME:
     // We would like to to do this:
@@ -193,10 +213,10 @@ if (!is(T == enum) && __traits(isStaticArray, T) && !canBitwiseHash!T)
 }
 
 //dynamic array hash
-size_t hashOf(T)(scope const T val, size_t seed = 0)
-if (is(T == S[], S) && (__traits(isScalar, S) || canBitwiseHash!S)) // excludes enum types
-{
-    import core.internal.convert : toUbyte;
+size_t hashOf(T)(scope const T val, size_t seed = 0) @trusted
+        if (is(T == S[], S) && (__traits(isScalar, S) || canBitwiseHash!S)) // excludes enum types
+        {
+
     alias ElementType = typeof(val[0]);
     static if (!canBitwiseHash!ElementType)
     {
@@ -207,22 +227,16 @@ if (is(T == S[], S) && (__traits(isScalar, S) || canBitwiseHash!S)) // excludes 
         }
         return hash;
     }
-    else static if (is(typeof(toUbyte(val)) == const(ubyte)[]))
-    //ubyteble array (arithmetic types and structs without toHash) CTFE ready for arithmetic types and structs without reference fields
-    {
-        return bytesHashAlignedBy!ElementType(toUbyte(val), seed);
-    }
-    else //Other types. CTFE unsupported
-    {
-        assert(!__ctfe, "unable to compute hash of "~T.stringof~" at compile time");
-        return bytesHashAlignedBy!ElementType((cast(const(ubyte)*) val.ptr)[0 .. ElementType.sizeof*val.length], seed);
-    }
+    else //Other types. CTFE unsupported {
+        assert(!__ctfe, "unable to compute hash of " ~ T.stringof ~ " at compile time");
+    return bytesHashAlignedBy!ElementType(
+        (cast(const(ubyte)*) val.ptr)[0 .. ElementType.sizeof * val.length], seed);
 }
 
 //dynamic array hash
-size_t hashOf(T)(T val, size_t seed = 0)
-if (is(T == S[], S) && !(__traits(isScalar, S) || canBitwiseHash!S)) // excludes enum types
-{
+size_t hashOf(T)(T val, size_t seed = 0) @trusted
+        if (is(T == S[], S) && !(__traits(isScalar, S) || canBitwiseHash!S)) // excludes enum types
+        {
     size_t hash = seed;
     foreach (ref o; val)
     {
@@ -233,7 +247,7 @@ if (is(T == S[], S) && !(__traits(isScalar, S) || canBitwiseHash!S)) // excludes
 
 // Indicates if F is a built-in complex number type.
 private F coalesceFloat(F)(const F val)
-if (__traits(isFloating, val) && !is(F == __vector) && !is(F : creal))
+        if (__traits(isFloating, val) && !is(F == __vector) && !is(F : creal))
 {
     static if (floatCoalesceZeroes)
         if (val == cast(F) 0)
@@ -252,7 +266,8 @@ size_t hashOf(T)(scope const T val) if (__traits(isScalar, T) && !is(T == __vect
     {
         if (__ctfe)
         {
-            if (val is null) return 0;
+            if (val is null)
+                return 0;
             assert(0, "Unable to calculate hash of non-null pointer at compile time");
         }
         size_t result = cast(size_t) val;
@@ -268,7 +283,7 @@ size_t hashOf(T)(scope const T val) if (__traits(isScalar, T) && !is(T == __vect
         static if (T.sizeof <= size_t.sizeof)
             return val;
         else
-            return cast(size_t) (val ^ (val >>> (size_t.sizeof * 8)));
+            return cast(size_t)(val ^ (val >>> (size_t.sizeof * 8)));
     }
     else static if (is(T : creal))
     {
@@ -279,12 +294,13 @@ size_t hashOf(T)(scope const T val) if (__traits(isScalar, T) && !is(T == __vect
         static assert(__traits(isFloating, T));
         auto data = coalesceFloat(val);
         static if (T.sizeof == float.sizeof && T.mant_dig == float.mant_dig)
-            return *cast(const uint*) &data;
+            return *cast(const uint*)&data;
         else static if (T.sizeof == double.sizeof && T.mant_dig == double.mant_dig)
-            return hashOf(*cast(const ulong*) &data);
+            return hashOf(*cast(const ulong*)&data);
         else
         {
             import core.internal.convert : floatSize, toUbyte;
+
             return bytesHashWithExactSizeAndAlignment!T(toUbyte(data)[0 .. floatSize!T], 0);
         }
     }
@@ -292,13 +308,15 @@ size_t hashOf(T)(scope const T val) if (__traits(isScalar, T) && !is(T == __vect
 
 //scalar type hash
 @trusted @nogc nothrow pure
-size_t hashOf(T)(scope const T val, size_t seed) if (__traits(isScalar, T) && !is(T == __vector))
+size_t hashOf(T)(scope const T val, size_t seed)
+        if (__traits(isScalar, T) && !is(T == __vector))
 {
     static if (is(T V : V*))
     {
         if (__ctfe)
         {
-            if (val is null) return hashOf(size_t(0), seed);
+            if (val is null)
+                return hashOf(size_t(0), seed);
             assert(0, "Unable to calculate hash of non-null pointer at compile time");
         }
         return hashOf(cast(size_t) val, seed);
@@ -338,7 +356,7 @@ size_t hashOf(T)(scope const T val, size_t seed) if (__traits(isScalar, T) && !i
     else static if (__traits(isIntegral, val) && T.sizeof > size_t.sizeof)
     {
         static foreach (i; 0 .. T.sizeof / size_t.sizeof)
-            seed = hashOf(cast(size_t) (val >>> (size_t.sizeof * 8 * i)), seed);
+            seed = hashOf(cast(size_t)(val >>> (size_t.sizeof * 8 * i)), seed);
         return seed;
     }
     else static if (is(T : creal))
@@ -349,12 +367,13 @@ size_t hashOf(T)(scope const T val, size_t seed) if (__traits(isScalar, T) && !i
     {
         auto data = coalesceFloat(val);
         static if (T.sizeof == float.sizeof && T.mant_dig == float.mant_dig)
-            return hashOf(*cast(const uint*) &data, seed);
+            return hashOf(*cast(const uint*)&data, seed);
         else static if (T.sizeof == double.sizeof && T.mant_dig == double.mant_dig)
-            return hashOf(*cast(const ulong*) &data, seed);
+            return hashOf(*cast(const ulong*)&data, seed);
         else
         {
             import core.internal.convert : floatSize, toUbyte;
+
             return bytesHashWithExactSizeAndAlignment!T(toUbyte(data)[0 .. floatSize!T], seed);
         }
     }
@@ -372,7 +391,9 @@ if (is(T == __vector)) // excludes enum types
         if (__ctfe)
         {
             // Workaround for CTFE bug.
-            static if (is(immutable typeof(val[0]) == immutable E, E)) {} // Get E.
+            static if (is(immutable typeof(val[0]) == immutable E, E))
+            {
+            } // Get E.
             E[T.sizeof / E.sizeof] array;
             foreach (i; 0 .. T.sizeof / E.sizeof)
                 array[i] = val[i];
@@ -383,6 +404,7 @@ if (is(T == __vector)) // excludes enum types
     else
     {
         import core.internal.convert : toUbyte;
+
         return bytesHashAlignedBy!T(toUbyte(val), seed);
     }
 }
@@ -396,13 +418,14 @@ size_t hashOf(T)(scope const T val) if (!is(T == enum) && is(T : typeof(null)))
 
 //typeof(null) hash. CTFE supported
 @trusted @nogc nothrow pure
-size_t hashOf(T)(scope const T val, size_t seed) if (!is(T == enum) && is(T : typeof(null)))
+size_t hashOf(T)(scope const T val, size_t seed)
+        if (!is(T == enum) && is(T : typeof(null)))
 {
     return hashOf(size_t(0), seed);
 }
 
 private enum _hashOfStruct =
-q{
+    q{
     enum bool isChained = is(typeof(seed) : size_t);
     static if (!isChained) enum size_t seed = 0;
     static if (hasCallableToHash!(typeof(val))) //CTFE depends on toHash()
@@ -539,46 +562,48 @@ q{
 
 //struct or union hash
 size_t hashOf(T)(scope const auto ref T val, size_t seed = 0)
-if (!is(T == enum) && (is(T == struct) || is(T == union))
-    && !is(T == const) && !is(T == immutable)
-    && canBitwiseHash!T)
+        if (!is(T == enum) && (is(T == struct) || is(T == union))
+        && !is(T == const) && !is(T == immutable)
+        && canBitwiseHash!T)
 {
     mixin(_hashOfStruct);
 }
 
 //struct or union hash
 size_t hashOf(T)(auto ref T val)
-if (!is(T == enum) && (is(T == struct) || is(T == union))
-    && !canBitwiseHash!T)
+        if (!is(T == enum) && (is(T == struct) || is(T == union))
+        && !canBitwiseHash!T)
 {
     mixin(_hashOfStruct);
 }
 
 //struct or union hash
 size_t hashOf(T)(auto ref T val, size_t seed)
-if (!is(T == enum) && (is(T == struct) || is(T == union))
-    && !canBitwiseHash!T)
+        if (!is(T == enum) && (is(T == struct) || is(T == union))
+        && !canBitwiseHash!T)
 {
     mixin(_hashOfStruct);
 }
 
 //struct or union hash - https://issues.dlang.org/show_bug.cgi?id=19332 (support might be removed in future)
 size_t hashOf(T)(scope auto ref T val, size_t seed = 0)
-if (!is(T == enum) && (is(T == struct) || is(T == union))
-    && (is(T == const) || is(T == immutable))
-    && canBitwiseHash!T && !canBitwiseHash!(Unconst!T))
+        if (!is(T == enum) && (is(T == struct) || is(T == union))
+        && (is(T == const) || is(T == immutable))
+        && canBitwiseHash!T && !canBitwiseHash!(Unconst!T))
 {
     mixin(_hashOfStruct);
 }
 
 //delegate hash. CTFE only if null.
 @trusted @nogc nothrow pure
-size_t hashOf(T)(scope const T val, size_t seed = 0) if (!is(T == enum) && is(T == delegate))
+size_t hashOf(T)(scope const T val, size_t seed = 0)
+        if (!is(T == enum) && is(T == delegate))
 {
     if (__ctfe)
     {
-        if (val is null) return hashOf(size_t(0), hashOf(size_t(0), seed));
-        assert(0, "unable to compute hash of "~T.stringof~" at compile time");
+        if (val is null)
+            return hashOf(size_t(0), hashOf(size_t(0), seed));
+        assert(0, "unable to compute hash of " ~ T.stringof ~ " at compile time");
     }
     return hashOf(val.ptr, hashOf(cast(void*) val.funcptr, seed));
 }
@@ -586,66 +611,73 @@ size_t hashOf(T)(scope const T val, size_t seed = 0) if (!is(T == enum) && is(T 
 //address-based class hash. CTFE only if null.
 @nogc nothrow pure @trusted
 size_t hashOf(T)(scope const T val)
-if (!is(T == enum) && (is(T == interface) || is(T == class))
-    && canBitwiseHash!T)
+        if (!is(T == enum) && (is(T == interface) || is(T == class))
+        && canBitwiseHash!T)
 {
-    if (__ctfe) if (val is null) return 0;
+    if (__ctfe)
+        if (val is null)
+            return 0;
     return hashOf(cast(const void*) val);
 }
 
 //address-based class hash. CTFE only if null.
 @nogc nothrow pure @trusted
 size_t hashOf(T)(scope const T val, size_t seed)
-if (!is(T == enum) && (is(T == interface) || is(T == class))
-    && canBitwiseHash!T)
+        if (!is(T == enum) && (is(T == interface) || is(T == class))
+        && canBitwiseHash!T)
 {
-    if (__ctfe) if (val is null) return hashOf(size_t(0), seed);
+    if (__ctfe)
+        if (val is null)
+            return hashOf(size_t(0), seed);
     return hashOf(cast(const void*) val, seed);
 }
 
 //class or interface hash. CTFE depends on toHash
 size_t hashOf(T)(T val)
-if (!is(T == enum) && (is(T == interface) || is(T == class))
-    && !canBitwiseHash!T)
+        if (!is(T == enum) && (is(T == interface) || is(T == class))
+        && !canBitwiseHash!T)
 {
-    static if (__traits(compiles, {size_t h = val.toHash();}))
+    static if (__traits(compiles, { size_t h = val.toHash(); }))
     {
-        static if (is(__traits(parent, val.toHash) P) && !is(immutable T* : immutable P*)
-                && is(typeof((ref P p) => p is null)))
+        static if (is(__traits(parent, val.toHash) P) && !is(immutable T*  : immutable P*)
+            && is(typeof((ref P p) => p is null)))
             return val ? hashOf(__traits(getMember, val, __traits(getAliasThis, T))) : 0;
         else
             return val ? val.toHash() : 0;
     }
     else
-        return val ? (cast(Object)val).toHash() : 0;
+        return val ? (cast(Object) val).toHash() : 0;
 }
 
 //class or interface hash. CTFE depends on toHash
 size_t hashOf(T)(T val, size_t seed)
-if (!is(T == enum) && (is(T == interface) || is(T == class))
-    && !canBitwiseHash!T)
+        if (!is(T == enum) && (is(T == interface) || is(T == class))
+        && !canBitwiseHash!T)
 {
-    static if (__traits(compiles, {size_t h = val.toHash();}))
+    static if (__traits(compiles, { size_t h = val.toHash(); }))
     {
-        static if (is(__traits(parent, val.toHash) P) && !is(immutable T* : immutable P*)
-                && is(typeof((ref P p) => p is null)))
-            return hashOf(val ? hashOf(__traits(getMember, val, __traits(getAliasThis, T)))
-                              : size_t(0), seed);
+        static if (is(__traits(parent, val.toHash) P) && !is(immutable T*  : immutable P*)
+            && is(typeof((ref P p) => p is null)))
+            return hashOf(val ? hashOf(__traits(getMember, val, __traits(getAliasThis, T))) : size_t(0), seed);
         else
             return hashOf(val ? cast(size_t) val.toHash() : size_t(0), seed);
     }
     else
-        return hashOf(val ? (cast(Object)val).toHash() : 0, seed);
+        return hashOf(val ? (cast(Object) val).toHash() : 0, seed);
 }
 
 //associative array hash. CTFE depends on base types
 size_t hashOf(T)(T aa) if (!is(T == enum) && __traits(isAssociativeArray, T))
 {
-    static if (is(typeof(aa) : V[K], K, V)) {} // Put K & V in scope.
-    static if (__traits(compiles, (ref K k, ref V v) nothrow => .hashOf(k) + .hashOf(v)))
-        scope (failure) assert(0); // Allow compiler to infer nothrow.
+    static if (is(typeof(aa) : V[K], K, V))
+    {
+    } // Put K & V in scope.
+    static if (__traits(compiles, (ref K k, ref V v)nothrow => .hashOf(k) + .hashOf(v)))
+        scope (failure)
+            assert(0); // Allow compiler to infer nothrow.
 
-    if (!aa.length) return 0;
+    if (!aa.length)
+        return 0;
     size_t h = 0;
 
     // The computed hash is independent of the foreach traversal order.
@@ -655,7 +687,8 @@ size_t hashOf(T)(T aa) if (!is(T == enum) && __traits(isAssociativeArray, T))
 }
 
 //associative array hash. CTFE depends on base types
-size_t hashOf(T)(T aa, size_t seed) if (!is(T == enum) && __traits(isAssociativeArray, T))
+size_t hashOf(T)(T aa, size_t seed)
+        if (!is(T == enum) && __traits(isAssociativeArray, T))
 {
     return hashOf(hashOf(aa), seed);
 }
@@ -678,8 +711,7 @@ private template bytesHashAlignedBy(AlignType)
 private template bytesHashWithExactSizeAndAlignment(SizeAndAlignType)
 {
     static if (SizeAndAlignType.alignof < uint.alignof
-            ? SizeAndAlignType.sizeof <= 12
-            : SizeAndAlignType.sizeof <= 10)
+        ? SizeAndAlignType.sizeof <= 12 : SizeAndAlignType.sizeof <= 10)
         alias bytesHashWithExactSizeAndAlignment = smallBytesHash;
     else
         alias bytesHashWithExactSizeAndAlignment = bytesHashAlignedBy!SizeAndAlignType;
@@ -698,6 +730,7 @@ private size_t fnv()(scope const(ubyte)[] bytes, size_t seed) @nogc nothrow pure
         seed = (seed ^ b) * prime;
     return seed;
 }
+
 private alias smallBytesHash = fnv;
 
 //-----------------------------------------------------------------------------
@@ -707,11 +740,13 @@ private uint get32bits()(scope const(ubyte)* x) @nogc nothrow pure @system
 {
     version (BigEndian)
     {
-        return ((cast(uint) x[0]) << 24) | ((cast(uint) x[1]) << 16) | ((cast(uint) x[2]) << 8) | (cast(uint) x[3]);
+        return ((cast(uint) x[0]) << 24) | ((cast(uint) x[1]) << 16) | (
+            (cast(uint) x[2]) << 8) | (cast(uint) x[3]);
     }
     else
     {
-        return ((cast(uint) x[3]) << 24) | ((cast(uint) x[2]) << 16) | ((cast(uint) x[1]) << 8) | (cast(uint) x[0]);
+        return ((cast(uint) x[3]) << 24) | ((cast(uint) x[2]) << 16) | (
+            (cast(uint) x[1]) << 8) | (cast(uint) x[0]);
     }
 }
 
@@ -726,7 +761,7 @@ private size_t bytesHash(bool dataKnownToBeAligned)(scope const(ubyte)[] bytes, 
     auto data = bytes.ptr;
     auto nblocks = len / 4;
 
-    uint h1 = cast(uint)seed;
+    uint h1 = cast(uint) seed;
 
     enum uint c1 = 0xcc9e2d51;
     enum uint c2 = 0x1b873593;
@@ -734,8 +769,8 @@ private size_t bytesHash(bool dataKnownToBeAligned)(scope const(ubyte)[] bytes, 
 
     //----------
     // body
-    auto end_data = data+nblocks*uint.sizeof;
-    for (; data!=end_data; data += uint.sizeof)
+    auto end_data = data + nblocks * uint.sizeof;
+    for (; data != end_data; data += uint.sizeof)
     {
         static if (dataKnownToBeAligned)
             uint k1 = __ctfe ? get32bits(data) : *(cast(const uint*) data);
@@ -747,7 +782,7 @@ private size_t bytesHash(bool dataKnownToBeAligned)(scope const(ubyte)[] bytes, 
 
         h1 ^= k1;
         h1 = (h1 << 13) | (h1 >> (32 - 13));
-        h1 = h1*5+c3;
+        h1 = h1 * 5 + c3;
     }
 
     //----------
@@ -756,12 +791,20 @@ private size_t bytesHash(bool dataKnownToBeAligned)(scope const(ubyte)[] bytes, 
 
     switch (len & 3)
     {
-        case 3: k1 ^= data[2] << 16; goto case;
-        case 2: k1 ^= data[1] << 8;  goto case;
-        case 1: k1 ^= data[0];
-                k1 *= c1; k1 = (k1 << 15) | (k1 >> (32 - 15)); k1 *= c2; h1 ^= k1;
-                goto default;
-        default:
+    case 3:
+        k1 ^= data[2] << 16;
+        goto case;
+    case 2:
+        k1 ^= data[1] << 8;
+        goto case;
+    case 1:
+        k1 ^= data[0];
+        k1 *= c1;
+        k1 = (k1 << 15) | (k1 >> (32 - 15));
+        k1 *= c2;
+        h1 ^= k1;
+        goto default;
+    default:
     }
 
     //----------
@@ -801,5 +844,5 @@ pure nothrow @system @nogc unittest
     // that you expect to change the result of bytesHash.
     assert(bytesHash(&a[1], a.length - 2, 0) == 2727459272);
     assert(bytesHash(&b, 5, 0) == 2727459272);
-    assert(bytesHashAlignedBy!uint((cast(const ubyte*) &b)[0 .. 5], 0) == 2727459272);
+    assert(bytesHashAlignedBy!uint((cast(const ubyte*)&b)[0 .. 5], 0) == 2727459272);
 }
