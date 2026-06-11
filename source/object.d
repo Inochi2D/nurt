@@ -43,6 +43,7 @@ version(WebAssembly) {
 // Needed by runtime.
 public import core.internal.entrypoint : _d_cmain;
 public import core.internal.switch_ : __switch;
+public import core.internal.cast_ : _d_cast;
 public import rt.lifetime : _d_newitemT;
 public import rt.cmp : __equals, __cmp;
 public import core.internal.array.nurt;

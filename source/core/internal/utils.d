@@ -48,7 +48,7 @@ size_t _nurt_wstrlen(inout(wchar)* str) @system @nogc pure nothrow {
 
 export
 extern(C)
-int _nurt_memcmp(scope const(void)* arg1, scope const(void)* arg2, size_t num) {
+int _nurt_memcmp(scope const(void)* arg1, scope const(void)* arg2, size_t num) @system @nogc pure {
     foreach(i; 0..num) {
         ubyte a = (cast(ubyte*)arg1)[i];
         ubyte b = (cast(ubyte*)arg2)[i];
