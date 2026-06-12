@@ -16,9 +16,11 @@ configuration "nurt-enabled" {
     dflags "-defaultlib=" platform="dmd"
     dflags "-nophoboslib" platform="gdc"
 
-    // Automatically set up nurt for use on LDC
-    dflags "--conf=$PACKAGE_DIR/nurt.conf" platform="ldc"
     versions "USE_NURT"
+
+    // WebAssembly support
+    dflags "--conf=$NURT_PACKAGE_DIR/ldc_config/55-wasm-wasip2.conf" platform="wasm32"
+    dflags "--conf=$NURT_PACKAGE_DIR/ldc_config/55-wasm-wasi.conf" platform="wasm32"
 }
 
 configuration "nurt-disabled" {

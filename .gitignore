@@ -2,25 +2,19 @@
 docs.json
 __dummy.html
 docs/
-/nulib
-nu*.dll
-nu*.lib
-libnu*.so
-libnu*.dylib
-libnu*.a
-nu*-test-*
 *.exe
 *.pdb
 *.o
 *.obj
 *.lst
 
+out/
 dub.selections.json
 __dummy_docs/
-out/
 
-# Windows metadata
-*.winmd
+# Redub Junk
+.ldc2_cache
 
-# VSCode Junk
+# Other Junk
+.DS_Store
 .vscode/

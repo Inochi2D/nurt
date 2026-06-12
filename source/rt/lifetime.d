@@ -89,6 +89,13 @@ static if(__VERSION__ < 2105) {
     }
 }
 
+extern (C) void[] _d_newarrayU(const scope TypeInfo ti, size_t length) pure nothrow @weak {
+    return nu_malloc(ti.size*length)[0..ti.size*length];
+}
+extern (C) void[] _d_newarrayT(const scope TypeInfo ti, size_t length) pure nothrow @weak {
+    return nu_malloc(ti.size*length)[0..ti.size*length];
+}
+
 version (LDC) 
 extern(C)
 void _d_array_slice_copy(void* dst, size_t dstlen, void* src, size_t srclen, size_t elemsz) @trusted nothrow {

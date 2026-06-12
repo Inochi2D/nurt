@@ -41,40 +41,8 @@ void* _d_cast(TTo, TFrom)(TFrom from) @trusted @nogc nothrow pure {
 				return pfrom;
 			}
 		} else static if (is(TTo : TFrom)) {
-			if (pfrom) {
-				ClassInfo ci2 = typeid(TTo);
-				ClassInfo ci = typeid(from);
-				ptrdiff_t delta = ci.depth;
-
-				if (delta && ci2.depth) {
-					delta -= ci2.depth;
-
-					// Invalid cast, delta went beyond Object.
-					if (delta < 0)
-						return null;
-
-					// Move up in the type hirearchy until we reach c2's depth.
-					while(delta--) ci = ci.base;
-
-					// If they're the same, we found our class!
-					if (_nu_cmp_classinfo(ci, ci2))
-						return pfrom;
-				
-					// They did not match, can't cast.
-					return null;
-				}
-
-				// Some classes may not have depth data,
-				// in that case, just iterate manually.
-				do {
-					if (_nu_cmp_classinfo(ci, ci2))
-						return pfrom;
-
-					ci = ci.base;
-				} while (ci);
-
-				// They did not match, can't cast.
-				return null;
+			if (void* result = _d_class_cast_impl(from, typeid(TTo))) {
+				return result;
 			}
 		}
 
@@ -82,8 +50,8 @@ void* _d_cast(TTo, TFrom)(TFrom from) @trusted @nogc nothrow pure {
 		
 		// Class-to-interface cast, need to apply offset in that case.
 		size_t offset = 0;
-		if (o && _nu_isbaseof!To(typeid(o), offset)) {
-			return cast(void*)o + offset;
+		if (pfrom && _nu_isbaseof!TTo(typeid(from), offset)) {
+			return pfrom + offset;
 		}
 	} else static if (is(TFrom == interface) && is(TTo == class)) {
 
@@ -114,6 +82,43 @@ void* _d_cast(TTo, TFrom)(TFrom from) @trusted @nogc nothrow pure {
 	return null;
 }
 
+void* _d_class_cast_impl(return scope const(Object) from, const(ClassInfo) ci2) @safe @nogc nothrow pure {
+	if (from) {
+		ClassInfo ci = typeid(from);
+		ptrdiff_t delta = ci.depth;
+
+		if (delta && ci2.depth) {
+			delta -= ci2.depth;
+
+			// Invalid cast, delta went beyond Object.
+			if (delta < 0)
+				return null;
+
+			// Move up in the type hirearchy until we reach c2's depth.
+			while(delta--) ci = ci.base;
+
+			// If they're the same, we found our class!
+			if (_nu_cmp_classinfo(ci, ci2))
+				return cast(void*)from;
+		
+			// They did not match, can't cast.
+			return null;
+		}
+
+		// Some classes may not have depth data,
+		// in that case, just iterate manually.
+		do {
+			if (_nu_cmp_classinfo(ci, ci2))
+				return cast(void*)from;
+
+			ci = ci.base;
+		} while (ci);
+
+		// They did not match, can't cast.
+		return null;
+	}
+	return null;
+}
 
 //
 //			IMPLEMENTATION DETAILS
@@ -142,7 +147,7 @@ bool _nu_isbaseof(TTo)(scope ClassInfo ci, scope ref size_t offset) @trusted @no
 			return true;
 
 		// Do depth-first search through interfaces.
-		foreach(iface; oc.interfaces) {
+		foreach(iface; ci.interfaces) {
 			if (_nu_cmp_classinfo(iface.classinfo, ci2) || _nu_isbaseof!TTo(iface.classinfo, offset)) {
 				offset += iface.offset;
 				return true;

@@ -38,6 +38,14 @@ version(GNU) {
 version(WebAssembly) {
     // This is here to ensure wasm libraries can be built.
     @weak extern(C) void _start() { }
+
+    pragma(mangle, "memcmp")
+    export extern(C) int memcmp(scope const(void)* arg1, scope const(void)* arg2, size_t num) {
+        return _nurt_memcmp(arg1, arg2, num);
+    }
+
+    pragma(mangle, "_Unwind_Resume")
+    export extern(C) void __unwind_resume(int) {}
 }
 
 // Needed by runtime.
@@ -264,13 +272,13 @@ public:
     /**
         The next throwable in the chain.
     */
-    @safe
-    @property inout(Throwable) next() inout return scope pure @nogc nothrow {
+    @trusted
+    @property inout(Throwable) next() inout pure nothrow @nogc return scope {
         return nextInChain;
     }
 
-    @safe
-    @property void next(Throwable tail) scope pure @nogc nothrow { /// ditto.
+    @trusted
+    @property void next(Throwable tail) pure nothrow @nogc scope  { /// ditto.
         nextInChain = tail;
     }
 
@@ -1089,26 +1097,49 @@ static foreach (type; AliasSeq!(bool, byte, double, float, int, long, short, uby
         class TypeInfo_Ay} // Needed by GCC.
             ~ type.mangleof ~ q{ : TypeInfo_Array {
             override string toString() const { return (type[]).stringof; }
-			override @property const(TypeInfo) next() @trusted const { return cast(inout)typeid(type); }
+            override @property const(TypeInfo) next() @trusted const { return cast(inout)typeid(type); }
             override size_t getHash(scope const void* p) @trusted const nothrow
             {
                 return hashOf(*cast(const type[]*) p);
             }
 
-			override bool equals(in void* av, in void* bv) @trusted const {
-				type[] a = *(cast(type[]*) av);
-				type[] b = *(cast(type[]*) bv);
+            override bool equals(in void* av, in void* bv) @trusted const {
+                type[] a = *(cast(type[]*) av);
+                type[] b = *(cast(type[]*) bv);
 
-				static if(is(type == void))
-					return false;
-				else {
-					foreach(idx, item; a)
-						if(item != b[idx])
-							return false;
-					return true;
-				}
-			}
-		}
+                static if(is(type == void))
+                    return false;
+                else {
+                    foreach(idx, item; a)
+                        if(item != b[idx])
+                            return false;
+                    return true;
+                }
+            }
+        }
+        class TypeInfo_Ax} // Needed by LDC.
+            ~ type.mangleof ~ q{ : TypeInfo_Array {
+            override string toString() const { return (type[]).stringof; }
+            override @property const(TypeInfo) next() @trusted const { return cast(inout)typeid(type); }
+            override size_t getHash(scope const void* p) @trusted const nothrow
+            {
+                return hashOf(*cast(const type[]*) p);
+            }
+
+            override bool equals(in void* av, in void* bv) @trusted const {
+                type[] a = *(cast(type[]*) av);
+                type[] b = *(cast(type[]*) bv);
+
+                static if(is(type == void))
+                    return false;
+                else {
+                    foreach(idx, item; a)
+                        if(item != b[idx])
+                            return false;
+                    return true;
+                }
+            }
+        }
 	});
 }
 

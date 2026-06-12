@@ -179,6 +179,41 @@ Tret _d_arraycatnTX(Tret, Tarr...)(auto ref Tarr froms) @nogc nothrow @trusted {
     }
 }
 
+
+/**
+    Allocate an array literal
+
+    Rely on the caller to do the initialization of the array.
+
+    ---
+    int[] getArr()
+    {
+        return [10, 20];
+        // auto res = cast(int*) _d_arrayliteralTX(typeid(int[]), 2);
+        // res[0] = 10;
+        // res[1] = 20;
+        // return res[0..2];
+    }
+    ---
+
+    Params:
+        T = unqualified type of array elements
+        length = `.length` of array literal
+
+    Returns: pointer to allocated array
+*/
+void* _d_arrayliteralTX(T)(size_t length) @trusted pure nothrow
+{
+    const allocsize = length * T.sizeof;
+
+    if (allocsize == 0)
+        return null;
+    else
+    {
+        return cast(void*)nu_malloca!T(length).ptr;
+    }
+}
+
 /**
     Perform array (vector) operations and store the result in `res`.  Operand
     types and operations are passed as template arguments in Reverse Polish
@@ -241,9 +276,14 @@ template _arrayOp(Args...) {
     alias _arrayOp = arrayOp!Args;
 }
 
-/// ditto
 T[] _d_newarrayT(T)(size_t length, bool isShared = false) @trusted {
     T[] result = nu_malloca!T(length);
+    return result;
+}
+
+T[] _d_newarrayU(T)(size_t length, bool isShared=false) @trusted {
+    T[] result = nu_malloca!T(length);
+    nogc_initialize(result[0..$]);
     return result;
 }
 
@@ -301,6 +341,45 @@ ref Tarr _d_arrayappendT(Tarr : T[], T)(return ref scope Tarr x, scope Tarr y) @
         nu_memcpy(cast(void*)&x[start], cast(void*) y.ptr, y.length * T.sizeof);
         return x;
     }
+}
+
+
+/**
+    Does array assignment (not construction) from another array of the same
+    element type. Does not support overlapping copies. Assumes the right hand
+    side is an rvalue,
+    
+    Used for static array assignment with non-POD element types:
+    ---
+    struct S {
+        ~this() {} // destructor, so not Plain Old Data
+    }
+    
+    void main() {
+        S[3] arr;
+        S[3] getRvalue() {return lvalue;}
+        
+        arr = getRvalue();
+        // Generates:
+        // (__appendtmp = getRvalue), _d_arrayassign_l(arr[], __appendtmp), arr;
+    }
+    ---
+    
+    Params:
+          to = destination array
+          from = source array
+    Returns:
+        `to`
+*/
+Tarr _d_arrayassign_r(Tarr : T[], T)(return scope Tarr to, scope Tarr from) @trusted @nogc nothrow {
+    nu_memcpy(cast(void*)to.ptr, cast(void*)from.ptr, T.sizeof*to.length);
+    return to;
+}
+
+// compiler frontend lowers dynamic array deconstruction to this
+void __ArrayDtor(T)(scope T[] a) {
+    foreach_reverse (ref T e; a)
+        e.__xdtor();
 }
 
 // Pre-array templatification helpers.
