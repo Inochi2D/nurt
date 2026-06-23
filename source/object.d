@@ -108,6 +108,11 @@ alias destroy = nogc_delete;
 */
 class Object {
 public:
+    // Monitor interface, must be here.
+    interface Monitor {
+        void lock();
+        void unlock();
+    }
 
     /**
         Compute hash function for Object.
