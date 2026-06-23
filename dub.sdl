@@ -19,9 +19,8 @@ configuration "nurt-enabled" {
     versions "USE_NURT"
 
     // WebAssembly support
-    dflags "--conf=$NURT_PACKAGE_DIR/ldc_config/55-wasm-wasip2.conf"    platform="wasm32"
-    dflags "--conf=$NURT_PACKAGE_DIR/ldc_config/55-wasm-wasi.conf"      platform="wasm32"
-    dflags "--conf=$NURT_PACKAGE_DIR/ldc_config/55-posix.conf"          platform="posix"
+    dflags "--conf=$NURT_PACKAGE_DIR/ldc_config/55-wasm32.conf"    platform="wasm32"
+    dflags "--conf=$NURT_PACKAGE_DIR/ldc_config/55-posix.conf"     platform="posix"
 }
 
 configuration "nurt-disabled" {
