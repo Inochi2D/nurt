@@ -158,12 +158,14 @@ int __cmp(T1, T2)(T1[] s1, T2[] s2) @nogc
     }
     return (s1.length > s2.length) - (s1.length < s2.length);
 }
-int __cmp(T)(scope const T lhs, scope const T rhs) @trusted @nogc nothrow {
+
+int __cmp(T)(scope const T lhs, scope const T rhs) @trusted @nogc nothrow
+if (!is(T == U[], U)) {
     static if (is(T.opCmp))
         return lhs.opCmp(rhs);
     else {
-        if (lhs < rhs) return -1;
-        else if (lhs > rhs) return 1;
+        if (cast(void*)lhs < cast(void*)rhs) return -1;
+        else if (cast(void*)lhs > cast(void*)rhs) return 1;
         else return 0;
     }
 }
